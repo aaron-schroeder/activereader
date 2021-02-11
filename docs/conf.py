@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('../'))
 
 
 # -- Project information -----------------------------------------------------
-from distance import __version__
-project = 'py-distance'
+from activereader import __version__
+project = 'activereader'
 copyright = '2021, Aaron Schroeder'
 author = 'Aaron Schroeder'
 

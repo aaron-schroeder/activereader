@@ -1,38 +1,64 @@
 # -*- coding: utf-8 -*-
-
-import distance
-
 import unittest
 
-import pandas as pd
-import numpy as np
+import datetime
 
-#import heartandsole.algorithms as algs
+from activereader.tcx import TcxFileReader
 
 
-class TestAlgorithms(unittest.TestCase):
+class TestTcxFileReader(unittest.TestCase):
 
-  def test_displacement(self):
-    """Test out my distance algorithm with hand calcs.
-
-    TODO: Figure out how to just test the distance algorithm, without
-          summoning a real series. OR, I could just break unittest
-          guidelines and leave the test as-is. I was originally thinking
-          of having a whole box of algorithms that I test. And that may
-          happen one day. But for now, let us make it easy.
+  @unittest.skip('Test with ya own damn files.')
+  def test_create(self):
+    """Integration test: create a TcxFileReader from .tcx file.
+    
+    TODO:
+      * Test files with pauses and laps.
     """
-    lon = pd.Series([0.0, 0.0, 0.0])
-    lon_ew = pd.Series([0.0, 1.0, 2.0])
-    lat = pd.Series([0.0, 0.0, 0.0])
-    lat_ns = pd.Series([0.0, 1.0, 2.0])
+    fname = 'activity_files/activity_3993313372.tcx'
+    # fname = 'activity_files/activity_4257833732.tcx'
+    # This file contains no elevation, speed, or cadence data.
+    #fname = 'activity_files/20190425_110505_Running.tcx'
 
-    disp_ew = distance.spherical_earth_plane_displacement(lat, lon_ew)
-    self.assertIsInstance(disp_ew, pd.Series)
-    self.assertAlmostEqual(disp_ew.iloc[-1], 6371000 * 1.0 * np.pi / 180)
+    tcx = TcxFileReader(fname)
 
-    disp_ns = distance.spherical_earth_plane_displacement(lat_ns, lon)
-    self.assertIsInstance(disp_ns, pd.Series)
-    self.assertAlmostEqual(disp_ns.iloc[-1], 6371000 * 1.0 * np.pi / 180)
+    self.assertIsInstance(tcx, TcxFileReader)
+    self.assertIsInstance(tcx.get_trackpoints(), list)
+    self.assertIsInstance(tcx.activity_start_time, datetime.datetime)
+
+  @unittest.skip('Test with ya own damn files.')
+  def test_trackpoint(self):
+    """More like a running list of properties."""
+    fname = 'activity_files/activity_4257833732.tcx'
+
+    tp = TcxFileReader(fname).get_trackpoints()[0]
+
+    expected_attr_types = dict(
+      time=datetime.datetime,
+      lat=float,
+      lon=float,
+      distance_m=float,
+      altitude_m=float,
+      hr=int,
+      speed_ms=float,
+      cadence_rpm=int,
+    )
+
+    for attr_name, expected_type in expected_attr_types.items():
+      attr = getattr(tp, attr_name)
+      self.assertIsNotNone(attr, attr_name)
+      self.assertIsInstance(attr, expected_type)
+
+
+  @unittest.skip('On hold - rethinking how this wants to work.')
+  def test_header(self):
+    print(tcx.date)
+    print(tcx.device)
+    print(tcx.distance)
+    print(tcx.calories)
+    print(tcx.lap_time_seconds)
+    print(tcx.get_header_value('UnitId'))
+    print(tcx.get_header_value('ProductID'))
 
 
 if __name__ == '__main__':

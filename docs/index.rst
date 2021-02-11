@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to py-distance's documentation!
-=======================================
+Welcome to py-activityreaders documentation!
+============================================
 
 .. toctree::
    :maxdepth: 2
