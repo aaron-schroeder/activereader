@@ -44,8 +44,8 @@ with info.
 
 ## Dependencies and Installation
 
-[Pandas](http://pandas.pydata.org/), [lxml](https://lxml.de/), and
-[python-dateutil](https://dateutil.readthedocs.io/en/stable/) are required.
+[lxml](https://lxml.de/) and [python-dateutil](https://dateutil.readthedocs.io/en/stable/)
+are required.
 
 To install (since I am not on pypi yet), first clone this repo.
 ```
@@ -66,8 +66,8 @@ pip install ${local_path_to_py-activityreader_dir}
 
 `py-activityreaders` provides the `activereader` package.
 
-Use `TcxFileReader` to build a `pandas.DataFrame` for increased data 
-accessibility and readability. This file type can be exported from 
+Use `TcxFileReader` to read and access data from a `tcx` file. 
+This file type can be exported from 
 [Garmin Connect](http://connect.garmin.com/).
 ```python
 import pandas as pd
@@ -99,14 +99,13 @@ df = pd.DataFrame.from_records(records)
 
 ### Complete
 
-- Develop capability to read running `.tcx` files.
+- Develop capability to read running `tcx` and `gpx` files.
+- 
 
 ### Current Activities
 
 - Expand capability to read running activity files
-  - `.gpx`
   - `.pwx` (is this Garmin?)
-  - `.csv`
 
 ### Future Work
 
