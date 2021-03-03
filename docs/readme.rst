@@ -1,1 +1,4 @@
-.. include:: ../README.rst
+py-activityreaders
+==================
+
+Readers for Garmin file types

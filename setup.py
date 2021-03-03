@@ -47,7 +47,6 @@ setup(
   #author_email='',
   install_requires = [
     'lxml==4.6.2',
-    'pandas==1.2.2',
     'python-dateutil==2.8.1',
   ],
   url='https://github.com/aaron-schroeder/py-activityreaders',

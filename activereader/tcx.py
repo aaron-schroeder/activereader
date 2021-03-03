@@ -5,157 +5,200 @@ Originated in hns/filereaders.py.
 """
 import datetime
 
-from dateutil import parser, tz
-from lxml import etree, objectify
+from lxml import etree
+from dateutil import tz
 
-
-def get_time(time_text):
-  """Returns a tz-aware datetime."""
-  try:
-    return parser.isoparse(time_text)
-  except TypeError:
-    return None
-
-
-def conv_or_none(elem, text_to_find, conv_type):
-  try:
-    return conv_type(elem.findtext(text_to_find))
-  except TypeError:
-    return None
+from . import util
+from .base import ActivityElement
 
 
 class TcxFileReader(object):
-  """.tcx file reader Class.
-  
-  TODO:
-    * Add properties for file header info (creator etc.)
+  """.tcx file reader Class."""
 
-  """
+  def __init__(self, file_obj):
+    """Initialize the reader from a file-like object.
 
-  def __init__(self, file_path):
-    # Verify that this is .tcx (it should be if it is passed here)
-    # if file_path.lower().endswith('.tcx'):
-
+    Args:
+      file_obj(file or file-like object): Any accepted object accepted
+        by `lxml.ElementTree.parse`.
+        https://lxml.de/tutorial.html#the-parse-function
+        
+    """
     # Attach these fields to the instance in case the user wants 
     # to interact with the file data in some way.
     # Note: tree is an ElementTree, which is just a thin wrapper
     # around root, which is an element
-    self.tree = etree.parse(file_path)
-    self.root = self.tree.getroot()
+    self.tree = etree.parse(file_obj)
+    root = self.tree.getroot()
+    util.strip_namespaces(root)
 
-    self.strip_namespaces(self.root)
+    self.tcx = Tcx(root)
 
-    assert self.root.tag == 'TrainingCenterDatabase'
-
-    activities = self.tree.xpath('//Activities/Activity')
+    # activities = self.tree.xpath('//Activities/Activity')
+    activities = self.tcx.get_activities()
     assert len(activities) == 1
 
-    self.activity_elem = activities[0]
-    self.sport_name = self.activity_elem.get('Sport')
+    self.activity = activities[0]
+    # activity = activities[0]
 
-    # tz-aware datetime
-    self.activity_start_time = get_time(self.activity_elem.findtext('Id'))
+  @property
+  def start_time(self):
+    return self.activity_start_time
+
+  @property
+  def activity_start_time(self):
+    """tz-aware datetime"""
+    return self.activity.start_time
     
-    # Not needed right now.
-    # tz_local = tz.gettz('US/Denver')
-    # activity_start_time_local = self.activity_start_time.astimezone(tz_local)
+  @property
+  def date(self):
+    """Colorado time, baby."""
+    return self.activity_start_time_local('US/Denver').date()
 
-  @staticmethod
-  def strip_namespaces(element):
-    """Strip namespaces from all elements to permit easier operations.
+  def activity_start_time_local(self, tz_name):
+    tz_local = tz.gettz(tz_name)
+    return self.activity_start_time.astimezone(tz_local)
 
-    https://stackoverflow.com/questions/18159221/remove-namespace-and-prefix-from-xml-in-python-using-lxml
-    
-    From what I've heard, lxml isn't really smart enough to deal with
-    them better than I can (by hand). I only have a few file types to
-    deal with. 
-    
-    Kind of like how FitParse can deal with profile.xlsx, but I've opted
-    to do that by hand. I think this is analogous?
-    """
-    for elem in element.getiterator():
-      # Guard against comments.
-      if not hasattr(elem.tag, 'find'): continue
-      
-      # Locate the extent of the namespace text and remove it.
-      i = elem.tag.find('}')
-      if i >= 0:
-        elem.tag = elem.tag[i+1:]
+  @property
+  def device(self):
+    return self.activity.device
 
-    # Get rid of all the `'ns5': 'http://...'` and `xsi:type` business
-    objectify.deannotate(element, cleanup_namespaces=True)
+  @property
+  def distance_m(self):
+    return sum([lap.distance_m for lap in self.get_laps()])
+
+  @property
+  def calories(self):
+    return sum([lap.calories for lap in self.get_laps()])
+
+  @property
+  def lap_time_s(self):
+    return sum([lap.total_time_s for lap in self.get_laps()])
+
+  @property
+  def num_laps(self):
+    return len(self.get_laps())
+
+  @property
+  def num_bouts(self):
+    return len(self.get_tracks(self))
+
+  @property
+  def num_records(self):
+    return len(self.get_trackpoints())
 
   def get_laps(self):
     #return [Lap(l) for l in self.tree.xpath('//Lap')]
-    return [Lap(l) for l in self.activity_elem.iterfind('Lap')]
+    return [Lap(child) for child in self.activity.elem.iter('Lap')]
 
   def get_tracks(self):
-    return [Track(t) for t in self.tree.xpath('//Track')]
+    return [Track(e) for e in self.activity.elem.findall('Lap/Track')]
 
   def get_trackpoints(self):
-    return [TrackPoint(tp) for tp in self.tree.xpath('//Track/Trackpoint')]
+    return [TrackPoint(e) for e in self.activity.elem.findall('Lap/Track/Trackpoint')]
 
 
-class Lap(object):
+class Tcx(ActivityElement):
+  TAG = 'TrainingCenterDatabase'
+  DATA_TAGS = {
+    'creator': ('Author/Name', str),
+    'part_number': ('Author/PartNumber', str)
+  }
+
+  def get_activities(self):
+    return [Activity(e) for e in self.elem.findall('Activities/Activity')]
+
+
+class Activity(ActivityElement):
+  TAG = 'Activity'
+  DATA_TAGS = {
+    'start_time': ('Id', 'time'),
+    'device': ('Creator/Name', str),
+    'device_id': ('Creator/UnitId', int),
+    # 'product_id': ('Creator/ProductID', int),
+    # 'version_major': ('Creator/Version/VersionMajor', int),
+    # 'version_minor': ('Creator/Version/VersionMinor', int),
+    # 'build_minor': ('Creator/Version/BuildMajor', int),
+    # 'build_minor': ('Creator/Version/BuildMinor', int),
+  }
+  ATTR_NAMES = {
+    'sport': ('Sport', str)
+  }
+
+  def get_laps(self):
+    return [Lap(e) for e in self.elem.iter('Lap')]
+
+  def get_tracks(self):
+    return [Track(e) for e in self.elem.iterfind('Lap/Track')]
+
+  def get_trackpoints(self):
+    return [TrackPoint(e) for e in self.elem.iterfind('Lap/Track/Trackpoint')]
+
+
+class Lap(ActivityElement):
   """Represents one bout from {start/restart} -> {pause/stop}.
   
   Made up of 1 or more `Track` in xml file.
   """
-
-  def __init__(self, lxml_elem):
-    assert lxml_elem.tag == 'Lap'
-    
-    self.elem = lxml_elem
-    self.start_time = get_time(self.elem.get('StartTime'))
-    self.total_time_s = conv_or_none(self.elem, 'TotalTimeSeconds', float)
-    self.distance_m = conv_or_none(self.elem, 'DistanceMeters', float)
-    self.max_speed_ms = conv_or_none(self.elem, 'MaximumSpeed', float)
-    self.calories = conv_or_none(self.elem, 'Calories', int)
-    self.hr_avg = conv_or_none(self.elem, 'AverageHeartRateBpm/Value', int)
-    self.hr_max = conv_or_none(self.elem, 'MaximumHeartRateBpm/Value', int)
-    self.intensity = conv_or_none(self.elem, 'Intensity', str)
-    self.trigger_method = conv_or_none(self.elem, 'TriggerMethod', str)
+  TAG = 'Lap'
+  DATA_TAGS = {
+    'total_time_s': ('TotalTimeSeconds', float),
+    'distance_m': ('DistanceMeters', float),
+    'max_speed_ms': ('MaximumSpeed', float),
+    'calories': ('Calories', int),
+    'hr_avg': ('AverageHeartRateBpm/Value', int),
+    'hr_max': ('MaximumHeartRateBpm/Value', int),
+    'intensity': ('Intensity', str),
+    'trigger_method': ('TriggerMethod', str),
+  }
+  ATTR_NAMES = {
+    'start_time': ('StartTime', 'time'),
+  }
 
   def get_tracks(self):
-    return [Track(t) for t in self.elem.iterfind('Track')]
+    return [Track(child) for child in self.elem.iter('Track')]
 
   def get_trackpoints(self):
-    return [TrackPoint(tp) for tp in self.elem.iterfind('Track/Trackpoint')]
+    return [TrackPoint(e) for e in self.elem.iterfind('Track/Trackpoint')]
 
 
-class Track(object):
+class Track(ActivityElement):
   """Represents one bout from {start/restart} -> {pause/stop}.
   
   Made up of 1 or more `Trackpoint` in xml file.
   """
+  TAG = 'Track'
 
-  def __init__(self, lxml_elem):
-    assert lxml_elem.tag == 'Track'
-    
-    self.elem = lxml_elem
+  def get_trackpoints(self):
+    return [TrackPoint(e) for e in self.elem.iter('Trackpoint')]
 
 
-class TrackPoint(object):
+class TrackPoint(ActivityElement):
   """Represents a single data sample corresponding to a point in time.
   
   The most granular of data contained in the file.
   """
+  TAG = 'Trackpoint'
+  DATA_TAGS = {
+    'time': ('Time', 'time'),
+    # 'time': ('Time', datetime.datetime),
+    'lat': ('Position/LatitudeDegrees', float),
+    'lon': ('Position/LongitudeDegrees', float),
+    'altitude_m': ('AltitudeMeters', float),
+    'distance_m': ('DistanceMeters', float),
+    'hr': ('HeartRateBpm/Value', int),
+    'speed_ms': ('Extensions/TPX/Speed', float),
+    'cadence_rpm': ('Extensions/TPX/RunCadence', int),
+  }
 
-  def __init__(self, lxml_elem):
-    assert lxml_elem.tag == 'Trackpoint'
-    
-    self.elem = lxml_elem
+  @property
+  def running_smoothness(self):
+    raise NotImplementedError
 
-    # Might want to memoize these to make use of @property.
-    self.time = get_time(self.elem.findtext('Time'))
-    self.lat = conv_or_none(self.elem, 'Position/LatitudeDegrees', float)
-    self.lon = conv_or_none(self.elem, 'Position/LongitudeDegrees', float)
-    self.altitude_m = conv_or_none(self.elem, 'AltitudeMeters', float)
-    self.distance_m = conv_or_none(self.elem, 'DistanceMeters', float)
-    self.hr = conv_or_none(self.elem, 'HeartRateBpm/Value', int)
-    self.speed_ms = conv_or_none(self.elem, 'Extensions/TPX/Speed', float)
-    self.cadence_rpm = conv_or_none(self.elem, 'Extensions/TPX/RunCadence', int)
-    # self.running_smoothness = 
-    # self.stance_time = 
-    # self.vertical_oscillation = 
-      
+  @property
+  def stance_time(self):
+    raise NotImplementedError
+
+  @property
+  def vertical_oscillation(self):
+    raise NotImplementedError
