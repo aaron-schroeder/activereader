@@ -29,7 +29,7 @@ def get_version(rel_path):
   raise RuntimeError('Unable to find version string.')
 
 
-with open('README.rst') as f:
+with open('README.md') as f:
   readme = f.read()
 
 with open('LICENSE') as f:
@@ -43,6 +43,7 @@ setup(
   version=get_version('%s/__init__.py' % pkg_name),
   description='description placeholder',
   long_description=readme,
+  long_description_content_type='text/markdown',
   author='Aaron Schroeder',
   #author_email='',
   install_requires = [
