@@ -27,7 +27,7 @@ class ActivityElement(object):
     
     if lxml_elem.tag != self.TAG:
       raise ValueError(
-        f'Expected a {self.TAG} tag.'
+        f'Expected lxml element with "{self.TAG}" tag, not "{lxml_elem.tag}".'
       )
 
     self.elem = lxml_elem
@@ -40,9 +40,6 @@ class ActivityElement(object):
 
     for prop_name, descendent_class in self.DESCENDENT_CLASSES.items():
       self.add_descendent_list_property(prop_name, descendent_class)
-
-    # if self.CHILD_TAG is not None:
-    #   setattr(self,)
 
   @classmethod
   def add_data_property(cls, prop_name, tag, conv_type=str):
@@ -65,7 +62,7 @@ class ActivityElement(object):
     setattr(
       cls,
       prop_name,
-      property(lambda self: [descendent_class(e) for e in self.elem.xpath(f'//{descendent_class.TAG}')])
+      property(lambda self: [descendent_class(e) for e in self.elem.xpath(f'.//{descendent_class.TAG}')])
     )
 
   def get_data(self, tag, conv_type=str):

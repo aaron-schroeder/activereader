@@ -7,8 +7,7 @@ import os
 
 from lxml import etree
 
-from activereader import tcx
-from activereader import gpx
+from activereader import tcx, gpx, base
 
 
 class ActivityElementTestMixin(object):
@@ -293,11 +292,107 @@ class TestGpxFileReader(ActivityElementTestMixin, unittest.TestCase):
     )
 
 
+def get_attrs(clazz):
+  return [attr_name for attr_name in dir(clazz) if not attr_name.startswith("_")]
+
+
+class MySubSubElement(base.ActivityElement):
+  TAG = 'sub_sub_element'
+
+
+class MySubElement(base.ActivityElement):
+  TAG = 'sub_element'
+  DESCENDENT_CLASSES = {
+    'sub_sub_elements': MySubSubElement
+  }
+
+
+class MyElement(base.ActivityElement):
+  TAG = 'element'
+  DATA_TAGS = {
+    # ${property_name}: ( ${tag_text}, ${expected_type} )
+    'my_data': ('MyDataTag', float)
+  }
+  ATTR_NAMES = {
+    # ${property_name}: ( ${attr_name}, ${expected_type} )
+    'my_attr': ('MyAttrName', float)  
+  }
+  DESCENDENT_CLASSES = {
+    # ${property_name}: ${descendent_class}
+    'sub_elements': MySubElement,
+    'sub_sub_elements': MySubSubElement
+  }
+
+
 class TestActivityElement(unittest.TestCase):
 
-  def test_create(self):
-    pass
+  def test_add_properties(self):
+    clazz = base.ActivityElement
 
+    self.assertNotIn('my_data_prop', get_attrs(clazz))
+    clazz.add_data_property('my_data_prop', 'tag_name', int)
+    self.assertIn('my_data_prop', get_attrs(clazz))
+
+    self.assertNotIn('my_attr_prop', get_attrs(clazz))
+    clazz.add_data_property('my_attr_prop', 'attr_name', int)
+    self.assertIn('my_attr_prop', get_attrs(clazz))
+
+  def test_subclass(self):
+
+    my_element = MyElement(etree.fromstring(
+      '<element MyAttrName="40.0">'
+        '<MyDataTag>'
+          '45.0'
+        '</MyDataTag>'
+        '<sub_element>'
+          '<sub_sub_element>'
+            'text'
+          '</sub_sub_element>'
+          '<sub_sub_element></sub_sub_element>'
+          '<sub_sub_element></sub_sub_element>'
+          '<sub_sub_element></sub_sub_element>'
+        '</sub_element>'
+        '<sub_element>'
+          '<sub_sub_element></sub_sub_element>'
+          '<sub_sub_element></sub_sub_element>'
+        '</sub_element>'
+      '</element>'
+    ))
+
+    attrs = get_attrs(my_element)
+    self.assertIn('my_attr', attrs)
+    self.assertEqual(my_element.my_attr, 40.0)
+    self.assertIn('my_data', attrs)
+    self.assertEqual(my_element.my_data, 45.0)
+    self.assertIn('sub_elements', attrs)
+    self.assertIsInstance(my_element.sub_elements, list)
+    self.assertIn('sub_sub_elements', attrs)
+    self.assertIsInstance(my_element.sub_sub_elements, list)
+    self.assertEqual(my_element.sub_sub_elements[0].elem.text, 'text')
+    self.assertEqual(len(my_element.sub_sub_elements), 6)
+    self.assertEqual(len(my_element.sub_elements), 2)
+    self.assertEqual(len(my_element.sub_elements[0].sub_sub_elements), 4)
+    self.assertEqual(len(my_element.sub_elements[1].sub_sub_elements), 2)
+
+  def test_raises(self):
+
+    with self.assertRaises(TypeError) as cm:
+      my_element = MyElement(etree.parse(io.StringIO(
+        '<sub_element></sub_element>'
+      )))
+    self.assertRegex(
+      str(cm.exception),
+      'Expected lxml element, not *.'  
+    )
+
+    with self.assertRaises(ValueError) as cm:
+      my_element = MyElement(etree.fromstring(
+        '<sub_element></sub_element>'
+      ))
+    self.assertEqual(
+      str(cm.exception),
+      'Expected lxml element with "element" tag, not "sub_element".'  
+    )
 
 if __name__ == '__main__':
   unittest.main()
