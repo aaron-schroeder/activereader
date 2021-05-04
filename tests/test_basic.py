@@ -58,12 +58,7 @@ class TestTcxFileReader(ActivityElementTestMixin, unittest.TestCase):
 
 
   def test_tcx(self):
-    """Integration test: create a TcxFileReader from .tcx file.
-    
-    TODO:
-      * Test files with pauses and laps.
-  
-    """
+    """Integration test: create a Tcx object from .tcx file."""
     # fname = 'activity_files/activity_3993313372.tcx'
     # fname = 'activity_files/activity_4257833732.tcx'
     # This file contains no elevation, speed, or cadence data.

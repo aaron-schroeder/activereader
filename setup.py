@@ -50,7 +50,7 @@ setup(
     'lxml==4.6.2',
     'python-dateutil==2.8.1',
   ],
-  url='https://github.com/aaron-schroeder/py-activityreaders',
+  url='https://github.com/aaron-schroeder/activereader',
   license=license,
   packages=find_packages(exclude=('tests', 'docs'))
 )

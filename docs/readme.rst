@@ -1,4 +1,4 @@
-py-activityreaders
+activereader
 ==================
 
 Readers for Garmin file types

@@ -53,7 +53,6 @@ class Track(ActivityElement):
   }
 
 
-# class GpxFileReader(object):
 class Gpx(ActivityElement):
   TAG = 'gpx'
   DATA_TAGS = {

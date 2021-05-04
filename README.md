@@ -1,4 +1,4 @@
-# py-activityreaders
+# activereader
 
 > Python library for reading Garmin's running activity files.
 
@@ -49,7 +49,7 @@ are required.
 
 To install (since I am not on pypi yet), first clone this repo.
 ```
-git clone https://github.com/aaron-schroeder/py-activityreaders.git
+git clone https://github.com/aaron-schroeder/activereader.git
 ```
 Now you have a local version of this package that you can install with `pip`
 (the `setup.py` file is configured to make this work).
@@ -57,14 +57,14 @@ Now you have a local version of this package that you can install with `pip`
 Activate whatever virtual environment where you wish to install `activereader`,
 and then:
 ```
-pip install ${local_path_to_py-activityreader_dir}
+pip install ${local_path_to_activereader_dir}
 ```
 
 ---
 
 ## Example
 
-`py-activityreaders` provides the `activereader` package.
+`activereader` provides the `activereader` package.
 
 Use `Tcx` to read and access data from a `tcx` file. 
 This file type can be exported from 
@@ -134,5 +134,5 @@ You can get in touch with me at the following places:
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 
 This project is licensed under the MIT License. See
-[LICENSE](https://github.com/aaron-schroeder/py-activityreaders/blob/master/LICENSE)
+[LICENSE](https://github.com/aaron-schroeder/activereader/blob/master/LICENSE)
 file for details.
