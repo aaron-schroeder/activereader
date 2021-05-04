@@ -66,15 +66,15 @@ pip install ${local_path_to_py-activityreader_dir}
 
 `py-activityreaders` provides the `activereader` package.
 
-Use `TcxFileReader` to read and access data from a `tcx` file. 
+Use `Tcx` to read and access data from a `tcx` file. 
 This file type can be exported from 
 [Garmin Connect](http://connect.garmin.com/).
 ```python
 import pandas as pd
 
-from activereader import TcxFileReader
+from activereader import Tcx
 
-reader = TcxFileReader('activity_files/activity_3993313372.tcx')
+reader = Tcx('tests/testdata.tcx')
 
 # Build a DataFrame using only trackpoints (as records).
 initial_time = reader.activity_start_time
@@ -88,7 +88,7 @@ records = [
     'heart_rate': tp.hr,
     'speed': tp.speed_ms,
     'cadence': tp.cadence_rpm,
-  } for tp in reader.get_trackpoints()
+  } for tp in reader.trackpoints
 ]
 
 df = pd.DataFrame.from_records(records)
@@ -100,18 +100,17 @@ df = pd.DataFrame.from_records(records)
 ### Complete
 
 - Develop capability to read running `tcx` and `gpx` files.
-- 
 
 ### Current Activities
-
-- Expand capability to read running activity files
-  - `.pwx` (is this Garmin?)
-
-### Future Work
 
 - Handle pauses and laps in files (things I avoid in my own workouts
   because they complicate and obscure the DATA!). The body keeps the score,
   but the watch keeps the stats.
+
+### Future Work
+  
+- Expand capability to read running activity files
+  - `.pwx` (is this Garmin?)
 
 - Make a project wiki so I can be as verbose as I please.
   (*You mean this isn't you being verbose?*)
