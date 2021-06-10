@@ -1,82 +1,111 @@
 # -*- coding: utf-8 -*-
 """.gpx file reader architecture.
 
-Check out the schema here:
-https://www.topografix.com/GPX/1/1/
+See also:
+  
+  `GPX schema <https://www.topografix.com/GPX/1/1/>`_
+    Official documentation for GPX elements and file structure.
 
-Also check out Garmins GPX trackpoint extension in
-activity_files/TrackPointExtensionv2.xsd
-
+  `Garmin's GPX trackpoint extension schema <https://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd>`_
+    XML file describing the schema for Garmin's additional GPX trackpoint elements.
 """
+import datetime
 import io
 
 from lxml import etree
 
 from . import util
-from .base import ActivityElement
+from .base import (
+  ActivityElement,
+  add_xml_data, add_xml_attr, add_xml_descendents, 
+  create_data_prop, create_attr_prop, create_descendent_prop
+)
 
 
-class TrackPoint(ActivityElement):
+class Trackpoint(ActivityElement):
   """Represents a single data sample corresponding to a point in time.
   
   The most granular of data contained in the file.
   """
   TAG = 'trkpt'
-  DATA_TAGS = {
-    'time': ('time', 'time'),
-    'altitude_m': ('ele', float),
-    'hr': ('extensions/TrackPointExtension/hr', int),
-    'cadence_rpm': ('extensions/TrackPointExtension/cad', int),
-  }
-  ATTR_NAMES = {
-    'lat': ('lat', float),
-    'lon': ('lon', float)
-  }
+
+  time = create_data_prop('time', datetime.datetime)
+  """datetime.datetime: Timestamp when trackpoint was recorded.
+  
+  See also:
+    :ref:`data.timestamp`
+  """
+
+  altitude_m = create_data_prop('ele', float)
+  """float: Elevation of ground surface in meters above sea level."""
+
+  hr = create_data_prop('extensions/TrackPointExtension/hr', int)
+  """int: Heart rate."""
+
+  cadence_rpm = create_data_prop('extensions/TrackPointExtension/cad', int)
+  """int: Cadence in RPM.
+  
+  See also:
+    :ref:`data.cadence`
+  """
+
+  lat = create_attr_prop('lat', float)
+  """float: Latitude in degrees N (-90 to 90)."""
+
+  lon = create_attr_prop('lon', float)
+  """float: Longitude in degrees E (-180 to 180)."""
 
 
 class Segment(ActivityElement):
+  """Holds a list of trackpoints which are logically connected in order.
+  
+  To represent a single GPS track where GPS reception was lost, or the 
+  GPS receiver was turned off, start a new Track Segment for each continuous
+  span of track data.
+  """
   TAG = 'trkseg'
-  DESCENDENT_CLASSES = {
-    'trackpoints': TrackPoint,
-  }
+
+  trackpoints = create_descendent_prop(Trackpoint)
 
 
+@add_xml_data(
+  name=('name', str),
+  activity_type=('type', str),
+)
 class Track(ActivityElement):
+  """An ordered list of trackpoints describing a path."""
   TAG = 'trk'
-  DATA_TAGS = {
-    'name': ('name', str),
-    'activity_type': ('type', str)
-  }
-  DESCENDENT_CLASSES = {
-    'segments': Segment,
-    'trackpoints': TrackPoint,
-  }
+
+  segments = create_descendent_prop(Segment)
+  trackpoints = create_descendent_prop(Trackpoint)
 
 
+@add_xml_data(name=('metadata/name', str))
+@add_xml_attr(
+  creator=('creator', str),
+  version=('version', str),
+)
 class Gpx(ActivityElement):
-  TAG = 'gpx'
-  DATA_TAGS = {
-    'start_time': ('metadata/time', 'time'),
-    'name': ('metadata/name', str),
-  }
-  ATTR_NAMES = {
-    'creator': ('creator', str),
-    'version': ('version', str),
-  }
-  DESCENDENT_CLASSES = {
-    'tracks': Track,
-    'segments': Segment,
-    'trackpoints': TrackPoint,
-  }
+  """Represents an entire .gpx file object."""
 
-  def __init__(self, file_obj):
-    """Creates a Gpx root object from an acceptable file object.
+  TAG = 'gpx'
+
+  @classmethod
+  def from_file(cls, file_obj):
+    """Initialize a Gpx element from a file-like object.
 
     Args:
       file_obj (str, bytes, io.StringIO, io.BytesIO): File-like object. 
         If str, either filename or a string representation of XML 
         object. If str or StringIO, the encoding should not be declared
         within the string.
+
+    Returns:
+      Gpx: An instance initialized with the :class:`~lxml.etree._Element`
+      that was read in.
+
+    See also:
+      https://lxml.de/tutorial.html#the-parse-function
 
     """
     if not isinstance(file_obj, (str, bytes, io.StringIO, io.BytesIO)):
@@ -92,10 +121,21 @@ class Gpx(ActivityElement):
 
     util.strip_namespaces(root)
 
-    super().__init__(root)
+    return cls(root)
+
+  start_time = create_data_prop('metadata/time', datetime.datetime)
+  """datetime.datetime: Timestamp at start of recording.
+  
+  See also:
+    :ref:`data.timestamp`
+  """
 
   # @property
   # def name(self):
   #   # GPX elements sometimes don't have their own name, so default to
   #   # the first track's name.
   #   return self.tracks[0].name
+
+  tracks = create_descendent_prop(Track)
+  segments = create_descendent_prop(Segment)
+  trackpoints = create_descendent_prop(Trackpoint)

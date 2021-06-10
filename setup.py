@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 def read(rel_path):
@@ -38,20 +38,31 @@ with open('LICENSE') as f:
 # Could this be outsourced somehow? find_packages maybe?
 pkg_name = 'activereader'
 
+version = get_version(f'{pkg_name}/__init__.py')
+
 setup(
   name=pkg_name,
-  version=get_version('%s/__init__.py' % pkg_name),
-  description='description placeholder',
+  version=version,
+  description='Garmin TCX and GPX file readers for running activities.',
   long_description=readme,
   long_description_content_type='text/markdown',
   author='Aaron Schroeder',
-  #author_email='',
+  author_email='aaron@trailzealot.com',
   install_requires = [
-    'lxml==4.6.2',
-    'python-dateutil==2.8.1',
+    'lxml>=4.6.2',
+    'python-dateutil>=2.8.1',
   ],
   url='https://github.com/aaron-schroeder/activereader',
-  license=license,
-  packages=find_packages(exclude=('tests', 'docs'))
+  project_urls={
+    'Documentation': f'https://activereader.readthedocs.io/en/stable/',
+  },
+  license='MIT',
+  packages=[pkg_name],
+  classifiers=[
+    'License :: OSI Approved :: MIT License',
+    'Intended Audience :: Developers',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+  ]
 )
 

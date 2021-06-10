@@ -7,7 +7,7 @@ import os
 
 from lxml import etree
 
-from activereader import tcx, gpx, base
+from activereader import tcx, gpx
 
 
 class ActivityElementTestMixin(object):
@@ -49,8 +49,8 @@ class TestTcxFileReader(ActivityElementTestMixin, unittest.TestCase):
     ]
 
     for i in range(len(data) - 1):
-      r1 = tcx.Tcx(data[i]).elem
-      r2 = tcx.Tcx(data[i+1]).elem
+      r1 = tcx.Tcx.from_file(data[i]).elem
+      r2 = tcx.Tcx.from_file(data[i+1]).elem
       self.assertEqual(etree.tostring(r1), etree.tostring(r2))
       # self.assertEqual(r1.text, r2.text)
       # self.assertEqual(r1.attrib, r2.attrib)
@@ -64,7 +64,13 @@ class TestTcxFileReader(ActivityElementTestMixin, unittest.TestCase):
     # This file contains no elevation, speed, or cadence data.
     # fname = 'activity_files/20190425_110505_Running.tcx'
 
-    reader = tcx.Tcx(self.TESTDATA_FILENAME)
+    reader = tcx.Tcx.from_file(self.TESTDATA_FILENAME)
+
+    # print(f'Laps: {len(reader.laps)}')
+    # for lap in reader.laps:
+    #   print(lap.start_time - reader.laps[0].start_time)
+    #   print(datetime.timedelta(seconds=lap.total_time_s))
+
 
     self.assertIsInstance(reader.trackpoints, list)
 
@@ -73,18 +79,19 @@ class TestTcxFileReader(ActivityElementTestMixin, unittest.TestCase):
       dict(
         creator=str,
         part_number=str,
-        start_time=datetime.datetime,
-        activity_start_time=datetime.datetime,
-        date=datetime.date,  # how to test tz-aware?
-        # This is actually a method...hmmm
-        # activity_start_time_local=datetime.datetime,
         device=str,
         distance_m=float,
         calories=int,
         lap_time_s=float,
         num_laps=int,
         num_bouts=int,
-        num_records=int
+        num_records=int,
+
+        # Retired methods that get data from other elements:
+        # start_time=datetime.datetime,
+        # activity_start_time=datetime.datetime,
+        # date=datetime.date,  # how to test tz-aware?
+        # activity_start_time_local=datetime.datetime,
       )
     )
 
@@ -102,11 +109,11 @@ class TestTcxFileReader(ActivityElementTestMixin, unittest.TestCase):
 
     trackpoints = reader.trackpoints
     self.assertIsInstance(trackpoints, list)
-    self.assertIsInstance(trackpoints[0], tcx.TrackPoint)
+    self.assertIsInstance(trackpoints[0], tcx.Trackpoint)
 
 
   def test_activity(self):
-    activity = tcx.Tcx(self.TESTDATA_FILENAME).activities[0]
+    activity = tcx.Tcx.from_file(self.TESTDATA_FILENAME).activities[0]
 
     self.check_attr_types(
       activity,
@@ -129,10 +136,10 @@ class TestTcxFileReader(ActivityElementTestMixin, unittest.TestCase):
 
     trackpoints = activity.trackpoints
     self.assertIsInstance(trackpoints, list)
-    self.assertIsInstance(trackpoints[0], tcx.TrackPoint)
+    self.assertIsInstance(trackpoints[0], tcx.Trackpoint)
 
   def test_lap(self):
-    lap = tcx.Tcx(self.TESTDATA_FILENAME).laps[0]
+    lap = tcx.Tcx.from_file(self.TESTDATA_FILENAME).laps[0]
 
     self.check_attr_types(
       lap,
@@ -158,20 +165,20 @@ class TestTcxFileReader(ActivityElementTestMixin, unittest.TestCase):
 
     trackpoints = lap.trackpoints
     self.assertIsInstance(trackpoints, list)
-    self.assertIsInstance(trackpoints[0], tcx.TrackPoint)
+    self.assertIsInstance(trackpoints[0], tcx.Trackpoint)
 
   def test_track(self):
-    track = tcx.Tcx(self.TESTDATA_FILENAME).tracks[0]
+    track = tcx.Tcx.from_file(self.TESTDATA_FILENAME).tracks[0]
 
     trackpoints = track.trackpoints
     self.assertIsInstance(trackpoints, list)
-    self.assertIsInstance(trackpoints[0], tcx.TrackPoint)
+    self.assertIsInstance(trackpoints[0], tcx.Trackpoint)
 
 
   def test_trackpoint(self):
     """More like a running list of properties."""
 
-    tp = tcx.Tcx(self.TESTDATA_FILENAME).trackpoints[0]
+    tp = tcx.Tcx.from_file(self.TESTDATA_FILENAME).trackpoints[0]
 
     self.check_attr_types(
       tp,
@@ -209,8 +216,8 @@ class TestGpxFileReader(ActivityElementTestMixin, unittest.TestCase):
     ]
 
     for i in range(len(data) - 1):
-      r1 = gpx.Gpx(data[i]).elem
-      r2 = gpx.Gpx(data[i+1]).elem
+      r1 = gpx.Gpx.from_file(data[i]).elem
+      r2 = gpx.Gpx.from_file(data[i+1]).elem
       self.assertEqual(etree.tostring(r1), etree.tostring(r2))
       # self.assertEqual(r1.text, r2.text)
       # self.assertEqual(r1.attrib, r2.attrib)
@@ -220,7 +227,7 @@ class TestGpxFileReader(ActivityElementTestMixin, unittest.TestCase):
 
  
   def test_gpx(self):
-    g = gpx.Gpx(self.TESTDATA_FILENAME)
+    g = gpx.Gpx.from_file(self.TESTDATA_FILENAME)
 
     self.check_attr_types(
       g,
@@ -242,10 +249,10 @@ class TestGpxFileReader(ActivityElementTestMixin, unittest.TestCase):
 
     trackpoints = g.trackpoints
     self.assertIsInstance(trackpoints, list)
-    self.assertIsInstance(trackpoints[0], gpx.TrackPoint)
+    self.assertIsInstance(trackpoints[0], gpx.Trackpoint)
 
   def test_track(self):
-    track = gpx.Gpx(self.TESTDATA_FILENAME).tracks[0]
+    track = gpx.Gpx.from_file(self.TESTDATA_FILENAME).tracks[0]
 
     self.check_attr_types(
       track,
@@ -261,18 +268,18 @@ class TestGpxFileReader(ActivityElementTestMixin, unittest.TestCase):
 
     trackpoints = track.trackpoints
     self.assertIsInstance(trackpoints, list)
-    self.assertIsInstance(trackpoints[0], gpx.TrackPoint)
+    self.assertIsInstance(trackpoints[0], gpx.Trackpoint)
 
   def test_segment(self):
-    segment = gpx.Gpx(self.TESTDATA_FILENAME).segments[0]
+    segment = gpx.Gpx.from_file(self.TESTDATA_FILENAME).segments[0]
 
     trackpoints = segment.trackpoints
     self.assertIsInstance(trackpoints, list)
-    self.assertIsInstance(trackpoints[0], gpx.TrackPoint)
+    self.assertIsInstance(trackpoints[0], gpx.Trackpoint)
 
   def test_trackpoint(self):
     """More like a running list of properties."""
-    tp = gpx.Gpx(self.TESTDATA_FILENAME).trackpoints[0]
+    tp = gpx.Gpx.from_file(self.TESTDATA_FILENAME).trackpoints[0]
 
     self.check_attr_types(
       tp,
@@ -286,108 +293,6 @@ class TestGpxFileReader(ActivityElementTestMixin, unittest.TestCase):
       )
     )
 
-
-def get_attrs(clazz):
-  return [attr_name for attr_name in dir(clazz) if not attr_name.startswith("_")]
-
-
-class MySubSubElement(base.ActivityElement):
-  TAG = 'sub_sub_element'
-
-
-class MySubElement(base.ActivityElement):
-  TAG = 'sub_element'
-  DESCENDENT_CLASSES = {
-    'sub_sub_elements': MySubSubElement
-  }
-
-
-class MyElement(base.ActivityElement):
-  TAG = 'element'
-  DATA_TAGS = {
-    # ${property_name}: ( ${tag_text}, ${expected_type} )
-    'my_data': ('MyDataTag', float)
-  }
-  ATTR_NAMES = {
-    # ${property_name}: ( ${attr_name}, ${expected_type} )
-    'my_attr': ('MyAttrName', float)  
-  }
-  DESCENDENT_CLASSES = {
-    # ${property_name}: ${descendent_class}
-    'sub_elements': MySubElement,
-    'sub_sub_elements': MySubSubElement
-  }
-
-
-class TestActivityElement(unittest.TestCase):
-
-  def test_add_properties(self):
-    clazz = base.ActivityElement
-
-    self.assertNotIn('my_data_prop', get_attrs(clazz))
-    clazz.add_data_property('my_data_prop', 'tag_name', int)
-    self.assertIn('my_data_prop', get_attrs(clazz))
-
-    self.assertNotIn('my_attr_prop', get_attrs(clazz))
-    clazz.add_data_property('my_attr_prop', 'attr_name', int)
-    self.assertIn('my_attr_prop', get_attrs(clazz))
-
-  def test_subclass(self):
-
-    my_element = MyElement(etree.fromstring(
-      '<element MyAttrName="40.0">'
-        '<MyDataTag>'
-          '45.0'
-        '</MyDataTag>'
-        '<sub_element>'
-          '<sub_sub_element>'
-            'text'
-          '</sub_sub_element>'
-          '<sub_sub_element></sub_sub_element>'
-          '<sub_sub_element></sub_sub_element>'
-          '<sub_sub_element></sub_sub_element>'
-        '</sub_element>'
-        '<sub_element>'
-          '<sub_sub_element></sub_sub_element>'
-          '<sub_sub_element></sub_sub_element>'
-        '</sub_element>'
-      '</element>'
-    ))
-
-    attrs = get_attrs(my_element)
-    self.assertIn('my_attr', attrs)
-    self.assertEqual(my_element.my_attr, 40.0)
-    self.assertIn('my_data', attrs)
-    self.assertEqual(my_element.my_data, 45.0)
-    self.assertIn('sub_elements', attrs)
-    self.assertIsInstance(my_element.sub_elements, list)
-    self.assertIn('sub_sub_elements', attrs)
-    self.assertIsInstance(my_element.sub_sub_elements, list)
-    self.assertEqual(my_element.sub_sub_elements[0].elem.text, 'text')
-    self.assertEqual(len(my_element.sub_sub_elements), 6)
-    self.assertEqual(len(my_element.sub_elements), 2)
-    self.assertEqual(len(my_element.sub_elements[0].sub_sub_elements), 4)
-    self.assertEqual(len(my_element.sub_elements[1].sub_sub_elements), 2)
-
-  def test_raises(self):
-
-    with self.assertRaises(TypeError) as cm:
-      my_element = MyElement(etree.parse(io.StringIO(
-        '<sub_element></sub_element>'
-      )))
-    self.assertRegex(
-      str(cm.exception),
-      'Expected lxml element, not *.'  
-    )
-
-    with self.assertRaises(ValueError) as cm:
-      my_element = MyElement(etree.fromstring(
-        '<sub_element></sub_element>'
-      ))
-    self.assertEqual(
-      str(cm.exception),
-      'Expected lxml element with "element" tag, not "sub_element".'  
-    )
 
 if __name__ == '__main__':
   unittest.main()

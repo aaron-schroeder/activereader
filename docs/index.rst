@@ -3,15 +3,30 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to activereader documentation!
-============================================
+Welcome to activereader's documentation!
+========================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: API Reference:
 
-   readme
-   source/modules
+   source/gpx
+   source/tcx
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Nitty-gritty details:
+
+   source/base
+.. source/nittygritty.rst
+.. readme
+.. source/modules
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Background:
+
+   source/data
 
 
 

@@ -1,5 +1,15 @@
+import datetime
+
 from dateutil import parser
 from lxml import objectify
+
+
+def get_conv_func(conv_type):
+  if conv_type == datetime.datetime:
+    return parser.isoparse
+  
+  # Assume this is a Python type
+  return conv_type
 
 
 def get_time(time_text):
