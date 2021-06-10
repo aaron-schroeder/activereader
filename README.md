@@ -5,15 +5,13 @@
 <!--[![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)-->
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 
----
-
-## Table of Contents    
+<!-- ## Table of Contents    
 - [Example](#example)                                                                
 - [Background](#background)
 - [Dependencies and Installation](#dependencies-and-installation)
 - [License](#license)
 - [Project Status](#project-status)
-- [Contact](#contact)
+- [Contact](#contact) -->
 
 ## Example
 
@@ -28,7 +26,7 @@ import pandas as pd
 
 from activereader import Tcx
 
-reader = Tcx('tests/testdata.tcx')
+reader = Tcx.from_file('tests/testdata.tcx')
 
 # Build a DataFrame using only trackpoints (as records).
 initial_time = reader.activity_start_time
