@@ -13,14 +13,10 @@ See also:
     XML file describing Garmin's extensions to the TCX schema.
 """
 import datetime
-import io
 
-from dateutil import tz
-from lxml import etree
-
-from . import util
 from .base import (
-  ActivityElement, 
+  ActivityElement,
+  XmlReader,
   add_xml_data, add_xml_attr, add_xml_descendents,
   # add_data_props, add_attr_props, add_descendent_props,
   create_data_prop, create_attr_prop, create_descendent_prop
@@ -252,21 +248,10 @@ class Tcx(ActivityElement):
         find_text, get, xpath, ... others?
         
     """
-    if not isinstance(file_obj, (str, bytes, io.StringIO, io.BytesIO)):
-      raise TypeError(f'file object type not accepted: {type(file_obj)}')
+    xml_reader = XmlReader(file_obj, ext='tcx')
+    xml_obj = xml_reader.read()
 
-    if isinstance(file_obj, str) and not file_obj.lower().endswith('.tcx'):
-      file_obj = io.StringIO(file_obj)
-    elif isinstance(file_obj, bytes):
-      file_obj = io.BytesIO(file_obj)
-
-    # Note: tree is an ElementTree, which is just a thin wrapper
-    # around root, which is an element
-    tree = etree.parse(file_obj)
-    root = tree.getroot()
-    util.strip_namespaces(root)
-
-    return cls(root)
+    return cls(xml_obj)
 
   # Below here are convenience properties that access data from
   # descendent elements. Not sure if they all stay.
@@ -303,3 +288,4 @@ class Tcx(ActivityElement):
   laps = create_descendent_prop(Lap)
   tracks = create_descendent_prop(Track)
   trackpoints = create_descendent_prop(Trackpoint)
+  # course_laps = create_descendent_prop(CourseLap)

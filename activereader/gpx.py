@@ -10,13 +10,10 @@ See also:
     XML file describing the schema for Garmin's additional GPX trackpoint elements.
 """
 import datetime
-import io
 
-from lxml import etree
-
-from . import util
 from .base import (
   ActivityElement,
+  XmlReader,
   add_xml_data, add_xml_attr, add_xml_descendents, 
   create_data_prop, create_attr_prop, create_descendent_prop
 )
@@ -54,6 +51,10 @@ class Trackpoint(ActivityElement):
 
   lon = create_attr_prop('lon', float)
   """float: Longitude in degrees E (-180 to 180)."""
+
+
+class Routepoint(Trackpoint):
+  TAG = 'rtept'
 
 
 class Segment(ActivityElement):
@@ -108,20 +109,10 @@ class Gpx(ActivityElement):
       https://lxml.de/tutorial.html#the-parse-function
 
     """
-    if not isinstance(file_obj, (str, bytes, io.StringIO, io.BytesIO)):
-      raise TypeError(f'file object type not accepted: {type(file_obj)}')
+    xml_reader = XmlReader(file_obj, ext='gpx')
+    xml_obj = xml_reader.read()
 
-    if isinstance(file_obj, str) and not file_obj.lower().endswith('.gpx'):
-      file_obj = io.StringIO(file_obj)
-    elif isinstance(file_obj, bytes):
-      file_obj = io.BytesIO(file_obj)
-
-    tree = etree.parse(file_obj)
-    root = tree.getroot()
-
-    util.strip_namespaces(root)
-
-    return cls(root)
+    return cls(xml_obj)
 
   start_time = create_data_prop('metadata/time', datetime.datetime)
   """datetime.datetime: Timestamp at start of recording.
@@ -139,3 +130,5 @@ class Gpx(ActivityElement):
   tracks = create_descendent_prop(Track)
   segments = create_descendent_prop(Segment)
   trackpoints = create_descendent_prop(Trackpoint)
+  # routes = create_descendent_prop(Route)
+  routepoints = create_descendent_prop(Routepoint)

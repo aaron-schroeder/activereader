@@ -2,11 +2,13 @@
 in GPX and TCX files.
 """
 
-import datetime
+import io
+import os
 
 from lxml import etree
 
 from . import util
+
 
 def create_data_prop(path, conv_type=int):
   """Add property inside an ActivityElement class definition that accesses data
@@ -108,7 +110,7 @@ class ActivityElement(object):
   """
 
   TAG = 'element'
-  """XML tag name of the element. 
+  """XML tag name of the element.
   
   If an instance of the class is initialized from a 
   :class:`lxml.etree._Element` with any other tag name, a TypeError will
@@ -382,3 +384,60 @@ def add_xml_descendents(**descendent_classes):
     return cls
 
   return add_descendent_properties
+
+
+class XmlReader:
+  """XmlReader provides an interface for reading in a XML file (eg GPX, TCX)."""
+  def __init__(self, filepath_or_buffer, ext='XML'):
+    self.ext = ext
+    data = self._get_data_from_filepath(filepath_or_buffer)
+    self.data = self._preprocess_data(data)
+
+  def _get_data_from_filepath(self, filepath_or_buffer):
+    """
+    The method {reader}.from_file accepts four input types:
+        1. filepath (string-like)
+        2. bytes
+        3. file-like object (e.g. open file object, StringIO, BytesIO)
+        4. GPX string
+    This method turns (1) and (2) into (3) to simplify the rest of the
+    processing. It returns input types (3) and (4) unchanged.
+
+    Raises FileNotFoundError if the input is a string ending in .{ext} 
+    but no such file exists.
+
+    Ref:
+      https://github.com/pandas-dev/pandas/blob/v1.5.1/pandas/io/json/_json.py#L837
+    """
+    if not isinstance(filepath_or_buffer, (str, bytes, io.StringIO, io.BytesIO)):
+      raise TypeError(f'file object type not accepted: {type(filepath_or_buffer)}')
+    if isinstance(filepath_or_buffer, str):
+      if filepath_or_buffer.lower().endswith(f'.{self.ext.lower()}'):
+        if not os.path.exists(filepath_or_buffer):
+          raise FileNotFoundError(f'File {filepath_or_buffer} does not exist')
+      else:
+        filepath_or_buffer = io.StringIO(filepath_or_buffer)
+    elif isinstance(filepath_or_buffer, bytes):
+      filepath_or_buffer = io.BytesIO(filepath_or_buffer)
+    return filepath_or_buffer
+
+  def _preprocess_data(self, data):
+    """
+    At this point, the data either has a `read` attribute (e.g. an open file
+    object, a StringIO, or a BytesIO) or is a string that is a XML document.
+    Any of these are acceptable inputs to `lxml.etree.parse`, so this method
+    does not change the data currently.
+
+    Ref:
+      https://github.com/pandas-dev/pandas/blob/v1.5.1/pandas/io/json/_json.py#L821
+    """
+    # if not hasattr(data, 'read'):
+    #   data = io.StringIO(data)
+    # data = data.read()
+    return data
+
+  def read(self):
+    tree = etree.parse(self.data)
+    root = tree.getroot()
+    util.strip_namespaces(root)
+    return root
