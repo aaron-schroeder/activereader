@@ -396,14 +396,15 @@ class XmlReader:
   def _get_data_from_filepath(self, filepath_or_buffer):
     """
     The method {reader}.from_file accepts four input types:
-        1. filepath (string-like)
-        2. bytes
-        3. file-like object (e.g. open file object, StringIO, BytesIO)
-        4. GPX string
+      1. filepath (string-like)
+      2. bytes
+      3. file-like object (e.g. open file object, StringIO, BytesIO)
+      4. GPX string
+
     This method turns (1) and (2) into (3) to simplify the rest of the
     processing. It returns input types (3) and (4) unchanged.
 
-    Raises FileNotFoundError if the input is a string ending in .{ext} 
+    Raises FileNotFoundError if the input is a string ending in ``.{ext}`` 
     but no such file exists.
 
     Ref:
@@ -423,9 +424,9 @@ class XmlReader:
 
   def _preprocess_data(self, data):
     """
-    At this point, the data either has a `read` attribute (e.g. an open file
+    At this point, the data either has a ``read`` attribute (e.g. an open file
     object, a StringIO, or a BytesIO) or is a string that is a XML document.
-    Any of these are acceptable inputs to `lxml.etree.parse`, so this method
+    Any of these are acceptable inputs to :func:`lxml.etree.parse`, so this method
     does not change the data currently.
 
     Ref:
@@ -437,6 +438,7 @@ class XmlReader:
     return data
 
   def read(self):
+    """Read the whole input into a :class:`lxml.etree._Element`"""
     tree = etree.parse(self.data)
     root = tree.getroot()
     util.strip_namespaces(root)

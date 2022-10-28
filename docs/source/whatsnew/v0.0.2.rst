@@ -1,0 +1,31 @@
+.. _whatsnew_002:
+
+What's new in 0.0.2 (October 28, 2022)
+--------------------------------------
+
+These are the changes in activereader 0.0.2. See :ref:`release` for a full changelog
+including other versions of activereader.
+
+.. ---------------------------------------------------------------------------
+.. _whatsnew_002.enhancements:
+
+Enhancements
+~~~~~~~~~~~~
+
+.. _whatsnew_002.enhancements.route_files:
+
+Reading route files
+^^^^^^^^^^^^^^^^^^^
+
+ActivityElement creation methods :meth:`Tcx.from_file<activereader.tcx.Tcx.from_file>` and 
+:meth:`Gpx.from_file<activereader.gpx.Gpx.from_file>` can now read route files in addition 
+to activity files. Previously, these methods were not reading in the data properly
+from these files, which are formatted slightly differently than activity files. 
+The failure was quiet: the list of trackpoints would simply be empty, for example.
+
+.. _whatsnew_002.enhancements.xml_reader:
+
+Create :mod:`~activereader.base.XmlReader`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A common class that is used by :meth:`Tcx.from_file<activereader.tcx.Tcx.from_file>` and 
+:meth:`Gpx.from_file<activereader.gpx.Gpx.from_file>`.
